@@ -2,6 +2,36 @@ import pandas as pd
 
 
 class Preprocessing:
+    def education(self, df):
+        level_edu = {
+            0: ['Preschool'],  # 0
+            1: ['1st-4th', '5th-6th'],  # ~5
+            2: ['10th', '9th', '11th'],  # ~7
+            3: ['12th', '7th-8th'],  # ~10
+            4: [],  # ~15
+            5: ['HS-grad'],  # ~17
+            6: ['Some-college'],  # ~20
+            7: [''],  # ~25
+            8: ['Assoc-voc', 'Assoc-acdm'],  # ~30
+            9: [''],  # ~35
+            10: [''],  # ~40
+            11: ['Bachelors'],  # ~45
+            12: [''],  # ~50
+            13: ['Masters'],  # ~55
+            14: [''],  # ~60
+            15: [''],  # ~65
+            16: [''],  # ~70
+            17: ['Doctorate', 'Prof-school'],  # ~75
+        }
+
+        def filter_education(X):
+            for key, value in level_edu.items():
+                if X in value:
+                    return key
+
+        df['education'] = df['education'].apply(filter_education)
+        return df
+
     def workclass(self, df):
         wc_level_dic = {
             0: ['Never-worked'],  # 0~5
@@ -48,50 +78,64 @@ class Preprocessing:
         return df
 
     def native_country(self, df):
-        df['native-country'] = df['native-country'].apply(
-            lambda x: x if x == ' United-States' else 'others')
-        # level_dic = {
-        #     0: ['Guatemala', 'Columbia', 'Nicaragua', 'Vietnam', 'Trinadad&Tobago', 'Holand-Netherlands'],
-        #     1: ['Honduras', 'Haiti', 'Laos', 'Outlying-US(Guam-USVI-etc)', 'Mexico', 'El-Salvador', 'Dominican-Republic'],
-        #     2: ['Thailand', 'Jamaica', 'Peru', 'Scotland', 'Puerto-Rico'],
-        #     3: ['Ecuador', 'South', 'Portugal', 'Poland'],
-        #     4: ['?', 'Cuba', 'Hong'],
-        #     5: ['Philippines', 'China', 'United-States'],
-        #     6: ['Germany', 'Cambodia', 'Yugoslavia', 'Taiwan', 'France'],
-        #     7: ['Japan', 'England', 'Canada', 'Iran', 'Italy', 'Greece', 'Ireland'],
-        #     8: ['India', 'Hungary'],
-        #     9: []
-        # }
+        # df['native-country'] = df['native-country'].apply(
+        #     lambda x: x if x == ' United-States' else 'others')
+        level_dic = {
+            1: ['Guatemala', 'Columbia', 'Nicaragua', 'Vietnam', 'Trinadad&Tobago', 'Holand-Netherlands'],
+            2: ['Honduras', 'Haiti', 'Laos', 'Outlying-US(Guam-USVI-etc)', 'Mexico', 'El-Salvador', 'Dominican-Republic'],
+            3: ['Thailand', 'Jamaica', 'Peru', 'Scotland', 'Puerto-Rico'],
+            4: ['Ecuador', 'South', 'Portugal', 'Poland'],
+            5: ['?', 'Cuba', 'Hong'],
+            6: ['Philippines', 'China', 'United-States'],
+            7: ['Germany', 'Cambodia', 'Yugoslavia', 'Taiwan', 'France'],
+            8: ['Japan', 'England', 'Canada', 'Iran', 'Italy', 'Greece', 'Ireland'],
+            9: ['India', 'Hungary'],
+            10: []
+        }
 
-        # def filter_country(X):
-        #     for key, value in level_dic.items():
-        #         if X in value:
-        #             return key
+        def filter_country(X):
+            for key, value in level_dic.items():
+                if X in value:
+                    return key
 
-        # df['native-country'] = df['native-country'].apply(filter_country)
+        df['native-country'] = df['native-country'].apply(filter_country)
         return df
 
-    # def oneHot_encoding(self, df):
-    #     df = pd.get_dummies(df, columns=[
-    #         'workclass',
-    #         'marital-status',
-    #         'occupation',
-    #         'relationship',
-    #         'race',
-    #         'sex',
-    #         'native-country'
-    #     ])
-    #     return df
+    def capital(self, df):
+        df['capital'] = df['capital-gain'] - df['capital-loss']
+        df = df.drop(columns=['capital-gain', 'capital-loss'])
+        return df
+
+    def race(self, df):
+        df['race'] = df['race'].apply(
+            lambda x: 1 if x in ['White', 'Asian-Pac-Islander'] else 0)
+        return df
+
+    def marital_status(self, df):
+        cate = {
+            "Married-civ-spouse": 7,
+            "Married-AF-spouse": 6,
+            "Divorced": 5,
+            "Married-spouse-absent": 4,
+            "Widowed": 3,
+            "Separated": 2,
+            "Never-married": 1
+        }
+
+        df['marital-status'] = df['marital-status'].map(cate)
+        return df
 
     def oneHot_encoding(self, df):
         df = pd.get_dummies(df, columns=[
+            'capital_p',
+            'education',
             'workclass',
             'marital-status',
             'occupation',
             'relationship',
-            'race',
-            'sex',
-            'native-country'
+            # 'race',
+            'sex'
+            # 'native-country'
         ])
         return df
 
@@ -106,11 +150,13 @@ class Preprocessing:
         df = df.drop(columns='fnlwgt')
 
         # education
-        df = df.drop(columns='education')
+        # df = self.education(df)
 
-        # education-num : do nothing
+        # education-num :
+        df = df.drop(columns='education-num')
 
-        # marital-status : do nothing
+        # marital-status
+        df = self.marital_status(df)
 
         # occupation
         df = self.occupation(df)
@@ -118,17 +164,23 @@ class Preprocessing:
         # relationship : do nothing
 
         # race : do nothing
+        df = self.race(df)
 
         # sex : do nothing
+        df['sex'] = df['sex'].apply(lambda x: 1 if x == 'Male' else 0)
+        df['maritalXsex'] = df['marital-status'] * df['sex']
 
         # capital-gain : do nothing
-
         # capital-loss : do nothing
+        df = self.capital(df)
+        df['capital_p'] = df['capital'].apply(lambda x: 1 if x == 0 else 2)
 
         # hours-per-week : do nothing
 
         # native-country
         df = self.native_country(df)
+        df['countryXrace'] = df['race'] * df['native-country']
+        # df = df.drop(columns=['capital-gain','capital-loss'])
 
         # one-hot encoding
         df = self.oneHot_encoding(df)
