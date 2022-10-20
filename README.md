@@ -24,7 +24,7 @@
 ## 테스트 방법
 
 ### 1. Kaggle_Train_simple.ipynb 을 수행한다.
-```
+```python
 from preprocessing import Preprocessing 
 pp = Preprocessing()
 X_df = pp.preprocess_hj(X_df)
@@ -32,10 +32,10 @@ X_df = pp.preprocess_hj(X_df)
 상기 preprocessing에서 전처리를 거친다.
 
 ### 2. 생성된 파일 선택
-```
+```python
 make_submission(xgb_clf,"xgb")
 ```
-을 통해하여 submission_xgb.csv 이 만들어진다.
+을 통해하여 `submission_xgb.csv` 이 만들어진다.
 xgb model이 가장 accuracy가 높으므로 이것으로 캐글 제출한다.
 
 
